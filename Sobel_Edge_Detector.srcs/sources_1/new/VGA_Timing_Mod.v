@@ -20,9 +20,9 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 
-module VGA_Timing_Mod(               
-        output wire [9:0] pixel_x, pixel_y,         //640x480
-        output wire hsync, vsync, pixel_write, 
+  module VGA_Timing_Mod(               
+        output wire [9:0] h_count, y_count,     
+        output wire hsync, vsync, active_pixel, 
         input wire clk_VGA, reset
     );
     
@@ -34,7 +34,7 @@ module VGA_Timing_Mod(
  assign pixel_x = (h_count >= 10'b0 && h_count <= 10'd639) ? h_count : 10'b0;
  assign pixel_y = (v_count >= 10'b0 && v_count <= 10'd479) ? v_count : 10'b0;
  
- assign pixel_write = ( (h_count >= 10'd0 && h_count <= 10'd639) && (v_count >= 10'd0 && v_count <= 10'd479) ) ? 1'b1 : 1'b0; 
+ assign active_pixel = ( (h_count >= 10'd0 && h_count <= 10'd639) && (v_count >= 10'd0 && v_count <= 10'd479) ) ? 1'b1 : 1'b0; 
  
  always @(posedge clk_VGA or posedge reset) begin 
     if (reset) begin 
