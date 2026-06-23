@@ -1,0 +1,31 @@
+# Vivado generated directories
+*.cache/
+*.gen/
+*.hw/
+*.ip_user_files/
+*.runs/
+*.sim/
+
+Sobel_Edge_Detector.cache/
+Sobel_Edge_Detector.gen/
+Sobel_Edge_Detector.hw/
+Sobel_Edge_Detector.ip_user_files/
+Sobel_Edge_Detector.runs/
+Sobel_Edge_Detector.sim/
+
+#Ignore IPs 
+Sobel_Edge_Detector.srcs/sources_1/ip/
+
+# Vivado logs
+*.jou
+*.log
+*.str
+
+#Simulation databases
+*.wdb
+
+#Other
+Thumbs.db
+.DS_Store
+*.xpr
+*.srcs/utils_1/
