@@ -29,7 +29,7 @@ module streaming_mod(
     input wire PLK,         //Pixel Clock 
     output wire XLK,        //driving clock (24MHZ) 
     input wire [7:0] D,
-    output wire reset_camera,   //active low 
+    //output wire reset_camera,   //active low - wired to hot 
     //FPGA Control Pins
     input wire reset, start_sig, clk,
     //VGA Pins
@@ -37,10 +37,12 @@ module streaming_mod(
     output wire VGA_hsync, VGA_vsync
     );
     
-    wire locked_XLK, camera_write_en;
+    wire camera_write_en;
     wire [9:0] camera_addr_x, camera_addr_y;
     wire [18:0] camera_addr;
     wire[11:0] pixel_in; 
+
+    wire clk_VGA, locked;
     
     //I2C Config Module
     sccb sccb(.reset(reset),
@@ -49,16 +51,19 @@ module streaming_mod(
     .SIO_C(SCL),
     .SIO_D(SDA));
 
-    //Create 24MHx clock signal for Camera 
-    clk_wiz_1 clk_wiz_1 (
+    //Create slower clocks
+    clk_wiz_0 clk_wiz_VGA (
     .clk_in1(clk),
-    .clk_out1(XLK),
+    .clk_out1(clk_VGA),
+    .clk_out2(XLK),
     .reset(reset),
-    .locked(locked_XLK)
+    .locked(locked)
     ); 
     
+    
+    
     //Camera Input
-    OV7670_Input(
+    OV7670_Input camera_input(
     //inputs
     .PCLK(PLK),.HREF(HS), .VSYNC(VS), .reset(reset),
     .data(D),
@@ -71,9 +76,7 @@ module streaming_mod(
     //compute the address for the frame buffer
     assign camera_addr = (camera_addr_y<<9) + (camera_addr_y<<7) + camera_addr_x; //640*y_addr + x_addr
     
-    //----------------------------------------------------VGA_Mod--------------------------------------------------------------
-    wire clk_VGA, locked_VGA, system_reset;
-    
+    //----------------------------------------------------VGA_Mod-------------------------------------------------------------
     //VGA_Timing_Mod
     wire [9:0] x_addr, y_addr;
     wire hsync_VGA_Timing, vysnc_VGA_Timing, active_pixel_VGA_Timing; 
@@ -85,47 +88,31 @@ module streaming_mod(
     //VGA_register 
     wire active_pixel_out;
     
-    //Create 25MHx clock signal for VGA 
-    clk_wiz_0 clk_wiz_VGA (
-    .clk_in1(clk),
-    .clk_out1(clk_VGA),
-    .reset(reset),
-    .locked(locked_VGA)
-    ); 
-    
-    assign system_reset = reset | ~locked_VGA; 
-    
-    /*
-    //for simulation 
-    assign clk_VGA = clk;
-    assign system_reset = reset; 
-    */
-    
     //Create VGA Timing signals and x,y coordinates 
     VGA_Timing_Mod VGA_Timing(
     //outputs
     .pixel_x(x_addr), .pixel_y(y_addr),   
     .hsync(hsync_VGA_Timing), .vsync(vsync_VGA_Timing), .active_pixel(active_pixel_VGA_Timing), 
     //inputs
-    .clk_VGA(clk_VGA), .reset(system_reset)
+    .clk_VGA(clk_VGA), .reset(reset)
     );
     
     //compute the address for the frame buffer
     assign pixel_address = (y_addr<<9) + (y_addr<<7) + x_addr; //640*y_addr + x_addr
     
     //-----------------------------------FRAME BUFFER----------------------------------------------------
-    FrameBuffer Frame_Buffer(
+    frame_buffer Frame_Buffer(
     //output
     .pixel_vga(pixel_buffer),
     //inputs
-    .clk_VGA(clk_VGA), .clk_camera(HS), .camera_write_en(camera_write_en),
-    .address_vga(pixel_address), .address_camera(camera_addr), .pixel_camera(camera_in)
+    .clk_VGA(clk_VGA), .clk_camera(PLK), .camera_write_en(camera_write_en),
+    .address_vga(pixel_address), .address_camera(camera_addr), .pixel_camera(pixel_in)
     );
     
     VGA_Register VGA_Reg(
     .reg_out({VGA_hsync, VGA_vsync, active_pixel_out}),
     .reg_in({hsync_VGA_Timing, vsync_VGA_Timing, active_pixel_VGA_Timing}),
-    .clk_VGA(clk_VGA), .reset(system_reset)
+    .clk_VGA(clk_VGA), .reset(reset)
     );
     
     assign VGA_R = (active_pixel_out == 1'b1) ? pixel_buffer[11:8] : 4'b0;
@@ -134,7 +121,6 @@ module streaming_mod(
     
     //----------------------------------------------END VGA_Mod------------------------------------------------------------------
     
-    //Frame Buffer
     
     
     
