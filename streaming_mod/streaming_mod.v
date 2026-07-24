@@ -84,8 +84,7 @@ module streaming_mod(
     //Address lookup for framebuffer 
     wire [18:0] pixel_address;
     wire [11:0] pixel_buffer; 
-    
-    //VGA_register 
+
     wire active_pixel_out;
     
     //Create VGA Timing signals and x,y coordinates 
@@ -105,7 +104,7 @@ module streaming_mod(
     //output
     .pixel_vga(pixel_buffer),
     //inputs
-    .clk_VGA(clk_VGA), .clk_camera(PLK), .camera_write_en(camera_write_en),
+    .clk_vga(clk_VGA), .clk_camera(PLK), .camera_write_en(camera_write_en),
     .address_vga(pixel_address), .address_camera(camera_addr), .pixel_camera(pixel_in)
     );
     
